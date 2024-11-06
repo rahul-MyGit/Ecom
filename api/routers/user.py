@@ -59,21 +59,41 @@ async def create_user(request: Request, db: Session = Depends(get_db)):
     return res
 
 
-@USER_ROUTER.post("/buy-item/{item_id}")
+from fastapi import Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, update
+from utils.init_db import SessionLocal
+from models import Item
+
+@USER_ROUTER.post("/{item_id}")
 def buy_item(item_id: int, quantity: int, db: Session = Depends(SessionLocal), request: Request = None):
     if not request.state.user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
     user = request.state.user
-    item = db.query(models.Item).filter(models.Item.id == item_id).with_for_update().first()
     
-    if not item or item.quantity < quantity:
-        raise HTTPException(status_code=400, detail="Insufficient stock")
+    with db.begin_nested():
+        item = db.execute(select(Item).where(Item.id == item_id).with_for_update()).scalar_one_or_none()
+        
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+        if item.quantity < quantity:
+            raise HTTPException(status_code=400, detail="Insufficient stock")
+
+        new_quantity = item.quantity - quantity
+        if new_quantity < 0:
+            raise HTTPException(status_code=400, detail="Not enough items in stock")
+
+        db.execute(
+            update(Item)
+            .where(Item.id == item_id)
+            .values(quantity=new_quantity)
+        )
 
     try:
-        item.quantity -= quantity
         db.commit()
-        return {"msg": "Purchase successful", "remaining_quantity": item.quantity}
+        return {"msg": "Purchase successful", "remaining_quantity": new_quantity}
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=500, detail="Transaction error")
