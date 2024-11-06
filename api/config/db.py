@@ -17,7 +17,7 @@ class UserRepo:
 class ItemRepo:
 
     async def fetch_by_id(db: Session, _id):
-        return db.query(models.User).filter(models.items.Item.id == _id).first()
+        return db.query(models.User).filter(models.Item.id == _id).first()
     
     async def create(db: Session, item: schemas.items.createItem):
         db_item = models.Item(name=item.name, price=item.price,description=item.description, quantity= item.quantity)

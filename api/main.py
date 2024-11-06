@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from routers.user import USER_ROUTER 
 from routers.auth import AUTH_ROUTER
+from routers.item import ITEM_ROUTER
 
 app = FastAPI()
 
@@ -10,6 +11,7 @@ def check_status():
 
 app.include_router(AUTH_ROUTER, prefix='/auth')
 app.include_router(USER_ROUTER, prefix='/users')
+app.include_router(ITEM_ROUTER, prefix='/event')
 
 if __name__ == '__main__': 
     import uvicorn
