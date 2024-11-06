@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends 
 from typing import List
 from schemas.auth import Signup, Login
 from utils.generatetoken import create_access_token, get_hashed_password, verify_password

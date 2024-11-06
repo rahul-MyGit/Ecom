@@ -40,6 +40,9 @@ from schemas.users import User
 from sqlalchemy.orm import Session
 from utils.init_db import get_db
 from config.db import UserRepo
+from fastapi import APIRouter, Request, HTTPException, Depends
+from sqlalchemy.exc import IntegrityError
+from utils.init_db import SessionLocal
 
 from . import models
 
@@ -54,3 +57,23 @@ async def get_all_users(db: Session = Depends(get_db)):
 async def create_user(request: Request, db: Session = Depends(get_db)):
     res = await UserRepo.create(db, request.body)
     return res
+
+
+@USER_ROUTER.post("/buy-item/{item_id}")
+def buy_item(item_id: int, quantity: int, db: Session = Depends(SessionLocal), request: Request = None):
+    if not request.state.user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = request.state.user
+    item = db.query(models.Item).filter(models.Item.id == item_id).with_for_update().first()
+    
+    if not item or item.quantity < quantity:
+        raise HTTPException(status_code=400, detail="Insufficient stock")
+
+    try:
+        item.quantity -= quantity
+        db.commit()
+        return {"msg": "Purchase successful", "remaining_quantity": item.quantity}
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Transaction error")
