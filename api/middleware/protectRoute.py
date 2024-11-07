@@ -6,6 +6,8 @@ from schemas.response import ErrorResponseModel
 from models import User
 from sqlalchemy.orm import Session
 from utils.init_db import get_db
+# import os
+# os.getenv()
 
 ALGORITHM = 'HS256'
 SECRET_KEY = 'asdasujikdnASLOIFGNADFSIULVNSaeliFG'
@@ -24,11 +26,9 @@ async def verify_token(request: Request, db: Session = Depends(get_db)):
                 raise HTTPException(status_code=403, detail="User not found")
 
             request.state.user = user
-        except ExpiredSignatureError:
-            raise HTTPException(status_code=403, detail="Token expired")
         except InvalidTokenError:
             raise HTTPException(status_code=403, detail="Invalid token")
-        except Exception:
+        except:
             raise HTTPException(status_code=403, detail="Error verifying token")
     else:
         raise HTTPException(status_code=403, detail="Authorization token not provided")

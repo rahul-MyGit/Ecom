@@ -34,44 +34,37 @@
     
 #     return userdetails
 
+print('hhhhhhhhhhhhhhhhhhhhhhoooooooooooooooooooooooooooooooooooeeeeeeeeeeeeeeeeeeeeeeeeeeee')
 
-from fastapi import APIRouter, Depends, Request
-from schemas.users import User
+from fastapi import APIRouter, Depends, Request, HTTPException
+from schemas.users import UserCreate
 from sqlalchemy.orm import Session
 from utils.init_db import get_db
 from config.db import UserRepo
-from fastapi import APIRouter, Request, HTTPException, Depends
 from sqlalchemy.exc import IntegrityError
-from utils.init_db import SessionLocal
-
-from . import models
+from sqlalchemy import select, update
+from models.dbModel import Item, User
+from middleware.protectRoute import verify_token
 
 USER_ROUTER = APIRouter()
 
 @USER_ROUTER.get('/')
 async def get_all_users(db: Session = Depends(get_db)):
-    res = await db.query(models.User).all()
+    res = db.query(User).all()
     return res
 
-@USER_ROUTER.post('/', response_model=User)
+@USER_ROUTER.post('/', response_model=UserCreate)
 async def create_user(request: Request, db: Session = Depends(get_db)):
     res = await UserRepo.create(db, request.body)
     return res
 
 
-from fastapi import Depends, HTTPException, Request
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, update
-from utils.init_db import SessionLocal
-from models import Item
-
-@USER_ROUTER.post("/{item_id}")
-def buy_item(item_id: int, quantity: int, db: Session = Depends(SessionLocal), request: Request = None):
+@USER_ROUTER.post("/{item_id}", dependencies=[Depends(verify_token)])
+def buy_item(item_id: int, quantity: int, db: Session = Depends(get_db), request: Request = None):
     if not request.state.user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    user = request.state.user
+    er = request.state.user
     
     with db.begin_nested():
         item = db.execute(select(Item).where(Item.id == item_id).with_for_update()).scalar_one_or_none()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 from typing import List
 from schemas.auth import Signup, Login
 from utils.generatetoken import create_access_token, get_hashed_password, verify_password
-from models import User
+from models.dbModel import User
 from sqlalchemy.orm import Session
 from utils.init_db import get_db
 from schemas.response import ResponseModel

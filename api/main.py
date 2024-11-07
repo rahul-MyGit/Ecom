@@ -11,8 +11,8 @@ def check_status():
 
 app.include_router(AUTH_ROUTER, prefix='/auth')
 app.include_router(USER_ROUTER, prefix='/users')
-app.include_router(ITEM_ROUTER, prefix='/event')
+app.include_router(ITEM_ROUTER, prefix='/item')
 
 if __name__ == '__main__': 
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=8002)
